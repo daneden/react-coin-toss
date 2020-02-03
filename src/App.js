@@ -1,6 +1,6 @@
 import React from "react"
 
-const { useEffect, useRef, useState } = React
+const { useCallback, useEffect, useRef, useState } = React
 
 function App() {
   const [side, setSide] = useState(1)
@@ -8,6 +8,7 @@ function App() {
   const [heads, setHeads] = useState(0)
   const [tails, setTails] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [updateRate, setUpdateRate] = useState(210)
 
   const [currentStretch, setCurrentStretch] = useState(0)
   const [headsRecord, setHeadsRecord] = useState(0)
@@ -15,7 +16,7 @@ function App() {
 
   const tossed = heads + tails
 
-  const tossCoin = () => {
+  const tossCoin = useCallback(() => {
     const landedOn = Math.round(Math.random())
 
     if (landedOn !== prevSide.current) {
@@ -41,21 +42,32 @@ function App() {
     }
 
     setSide(landedOn)
-  }
+  }, [
+    currentStretch,
+    heads,
+    headsRecord,
+    prevSide,
+    setCurrentStretch,
+    setHeads,
+    setHeadsRecord,
+    setTails,
+    setTailsRecord,
+    tails,
+    tailsRecord,
+  ])
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isPaused) {
         tossCoin()
       }
-    }, 10)
+    }, 10000 / updateRate)
     return () => clearInterval(interval)
-  })
+  }, [isPaused, tossCoin, updateRate])
 
   return (
     <div>
-      <p>The coin has been tossed {tossed} times.</p>
-      <p>It landed on {side === 1 ? "heads" : "tails"}</p>
+      <h1>The coin has been tossed {tossed} times.</h1>
       <ul>
         <li>
           <label htmlFor="heads">Heads: {heads}</label>
@@ -66,15 +78,31 @@ function App() {
           <meter id="tails" value={tails} max={tossed} />
         </li>
       </ul>
-      <button onClick={() => setIsPaused(!isPaused)}>
-        {!isPaused ? "Pause" : "Continue"}
-      </button>
-      {isPaused && <button onClick={tossCoin}>Toss coin</button>}
-      <hr />
+      <label>
+        Coin Tossing Rate
+        <input
+          max={1010}
+          min={10}
+          onChange={e => setUpdateRate(e.currentTarget.value)}
+          step={100}
+          type="range"
+          value={updateRate}
+        />
+      </label>
+      <div className="buttonGroup">
+        <button onClick={() => setIsPaused(!isPaused)}>
+          {!isPaused ? "Pause" : "Continue"}
+        </button>
+        {isPaused && <button onClick={tossCoin}>Toss coin</button>}
+      </div>
       <h2>Records</h2>
       <ul>
-        <li>Heads: {headsRecord}</li>
-        <li>Tails: {tailsRecord}</li>
+        <li>
+          Most Consecutive Heads: <strong>{headsRecord}</strong>
+        </li>
+        <li>
+          Most Consecutive Tails: <strong>{tailsRecord}</strong>
+        </li>
       </ul>
     </div>
   )
